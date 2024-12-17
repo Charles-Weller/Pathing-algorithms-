@@ -5,21 +5,15 @@ import heapq
 import time
 import pandas as pd
 from collections import deque
+import math
 
-# Coordinates of Headington Campus, Oxford Brookes University
-start_point = (51.754816, -1.222991)  # Oxford Brookes University
-# Coordinates of Gatwick Airport
-end_point = (51.742027, -1.228216)    
+start_point = (51.770072, -1.259315)  
+end_point = (51.742027, -1.228216)
 
-# Get the road network within a 10000-meter radius of Oxford Brookes University
-G = ox.graph_from_point(start_point, dist=10000, network_type='drive')
-
-# Calculate the number of nodes and edges in the graph
+G = ox.graph_from_point(start_point, dist=5000, network_type='drive')
 num_nodes = len(G.nodes)
 num_edges = len(G.edges)
 
-print(f"Number of nodes in the graph: {num_nodes}")
-print(f"Number of edges in the graph: {num_edges}")
 
 # Find the nearest nodes to the start and end points in the graph
 start_node = ox.distance.nearest_nodes(G, X=start_point[1], Y=start_point[0])
@@ -27,12 +21,11 @@ end_node = ox.distance.nearest_nodes(G, X=end_point[1], Y=end_point[0])
 
 # Plot the graph with the start and end points highlighted
 fig, ax = ox.plot_graph(G, node_size=10, edge_linewidth=0.5, show=False, close=False)
-plt.scatter([G.nodes[start_node]['x']], [G.nodes[start_node]['y']], c='green', s=100, zorder=5, label="Start: Oxford Brookes")
-plt.scatter([G.nodes[end_node]['x']], [G.nodes[end_node]['y']], c='blue', s=100, zorder=5, label="End: Gatwick Airport")
-plt.title('Road Network between Oxford Brookes and Gatwick Airport')
+plt.scatter([G.nodes[start_node]['x']], [G.nodes[start_node]['y']], c='green', s=100, zorder=5)
+plt.scatter([G.nodes[end_node]['x']], [G.nodes[end_node]['y']], c='blue', s=100, zorder=5)
+plt.title('Map of path area')
 
-# Add a legend for start and end points
-plt.legend(loc='upper right')
+
 
 # Save the plot as a high-resolution image
 fig.set_size_inches(14, 12)
@@ -130,32 +123,81 @@ def dijkstra(graph, start, goal):
                     heapq.heappush(open_set, (new_cost, neighbor, path + [neighbor]))
 
   return None, None, visited_nodes, time.time() - start_time
+
+
+####
+def euclidean_distance(node, goal):
+    # Get the coordinates of the current node and goal node
+    node_coords = (G.nodes[node]['y'], G.nodes[node]['x'])  # (latitude, longitude)
+    goal_coords = (G.nodes[goal]['y'], G.nodes[goal]['x'])  # (latitude, longitude)
+
+    # Calculate the Euclidean distance between the two nodes
+    x1, y1 = node_coords
+    x2, y2 = goal_coords
+    return math.sqrt((x2 - x1)**2 + (y2 - y1)**2)
+
+def a_star(graph, start, goal):
+    start_time = time.time()  # Start timing
+
+    # Priority queue with (f(n), current_node, path)
+    open_set = [(0 + euclidean_distance(start, goal), 0, start, [start])]  # f(n) = g(n) + h(n)
+    heapq.heapify(open_set)
+    visited = set()
+
+    min_cost = {start: 0}
+    visited_nodes = 0  # To count the number of visited nodes
+
+    while open_set:
+        # f(n), g(n), current_node, path
+        f_cost, cost, current_node, path = heapq.heappop(open_set)
+
+        if current_node == goal:
+            execution_time = time.time() - start_time  # Stop timing
+            return path, cost, visited_nodes, execution_time
+
+        if current_node not in visited:
+            visited.add(current_node)
+            visited_nodes += 1  # Increment visited nodes count
+
+            for neighbor in graph.neighbors(current_node):
+                edge_weight = graph[current_node][neighbor][0]['length']
+                new_cost = cost + edge_weight
+
+                # Calculate f(n) = g(n) + h(n)
+                f_cost = new_cost + euclidean_distance(neighbor, goal)
+
+                if neighbor not in min_cost or new_cost < min_cost[neighbor]:
+                    min_cost[neighbor] = new_cost
+                    heapq.heappush(open_set, (f_cost, new_cost, neighbor, path + [neighbor]))
+
+    return None, None, visited_nodes, time.time() - start_time
+
 ####
 # Bidirectional Dijkstra Algorithm (Updated)
 def bidirectional_dijkstra(graph, start, goal):
     start_time = time.time()  # Start timing
-    
+
     # Forward direction: start -> goal
     forward_queue = [(0, start, [start])]
     heapq.heapify(forward_queue)
     forward_visited = set()
     forward_dist = {start: 0}
-    forward_prev = {start: None}  # To track the path in the forward search
-    forward_visited_nodes = 0  # Count of nodes visited in forward search
-    
+    forward_prev = {start: None}
+    forward_visited_nodes = 0
+
     # Backward direction: goal -> start
     backward_queue = [(0, goal, [goal])]
     heapq.heapify(backward_queue)
     backward_visited = set()
     backward_dist = {goal: 0}
-    backward_prev = {goal: None}  # To track the path in the backward search
-    backward_visited_nodes = 0  # Count of nodes visited in backward search
-    
+    backward_prev = {goal: None}
+    backward_visited_nodes = 0
+
     # Initialize best distance and meeting node
     shortest_path_length = float('inf')
     meeting_node = None
     visited_nodes = 0  # Total number of visited nodes
-    
+
     while forward_queue and backward_queue:
         # Expand the forward search
         if forward_queue:
@@ -166,10 +208,7 @@ def bidirectional_dijkstra(graph, start, goal):
                 if total_dist < shortest_path_length:
                     shortest_path_length = total_dist
                     meeting_node = f_node
-                    
-                    # Reconstruct the full path by combining forward and backward paths
-                    # Forward path is from start to meeting node
-                    # Backward path is from goal to meeting node (reverse it)
+
                     forward_path = f_path
                     backward_path = []
                     b_node = f_node
@@ -193,7 +232,7 @@ def bidirectional_dijkstra(graph, start, goal):
                         forward_dist[neighbor] = new_cost
                         forward_prev[neighbor] = f_node  # Track the path in the forward search
                         heapq.heappush(forward_queue, (new_cost, neighbor, f_path + [neighbor]))
-        
+
         # Expand the backward search
         if backward_queue:
             b_cost, b_node, b_path = heapq.heappop(backward_queue)
@@ -203,10 +242,7 @@ def bidirectional_dijkstra(graph, start, goal):
                 if total_dist < shortest_path_length:
                     shortest_path_length = total_dist
                     meeting_node = b_node
-                    
-                    # Reconstruct the full path by combining forward and backward paths
-                    # Forward path is from start to meeting node
-                    # Backward path is from goal to meeting node (reverse it)
+
                     forward_path = []
                     f_node = b_node
                     while f_node is not None:
@@ -241,13 +277,13 @@ def bidirectional_dijkstra(graph, start, goal):
 
 
 ####
-#Compare funtions 
+#Compare funtions
 def compare_algorithms(graph, start_node, end_node):
     results = {}
     algorithms = {
         'Dijkstra': dijkstra,
         'Bidirectional Dijkstra': bidirectional_dijkstra,
-        #'A*': a_star,
+        'A*': a_star,
         'BFS': bfs,
         'DFS': dfs
     }
@@ -289,7 +325,7 @@ plt.xlabel('Algorithm')
 plt.ylabel('Execution Time (seconds)')
 plt.show()
 
-#barchart distance 
+#barchart distance
 path_lengths = df_results['Path Length (meters)']
 
 plt.bar(algorithms, path_lengths, color=['orange', 'blue', 'green'])

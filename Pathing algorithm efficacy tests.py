@@ -7,329 +7,264 @@ import pandas as pd
 from collections import deque
 import math
 
-start_point = (51.770072, -1.259315)  
-end_point = (51.742027, -1.228216)
+startPoint = (51.770072, -1.259315)
+endPoint = (51.742027, -1.228216)
 
-G = ox.graph_from_point(start_point, dist=5000, network_type='drive')
-num_nodes = len(G.nodes)
-num_edges = len(G.edges)
+roadGraph = ox.graph_from_point(startPoint, dist=5000, network_type='drive')
+startNode = ox.distance.nearest_nodes(roadGraph, X=startPoint[1], Y=startPoint[0])
+endNode = ox.distance.nearest_nodes(roadGraph, X=endPoint[1], Y=endPoint[0])
 
-
-# Find the nearest nodes to the start and end points in the graph
-start_node = ox.distance.nearest_nodes(G, X=start_point[1], Y=start_point[0])
-end_node = ox.distance.nearest_nodes(G, X=end_point[1], Y=end_point[0])
-
-# Plot the graph with the start and end points highlighted
-fig, ax = ox.plot_graph(G, node_size=10, edge_linewidth=0.5, show=False, close=False)
-plt.scatter([G.nodes[start_node]['x']], [G.nodes[start_node]['y']], c='green', s=100, zorder=5)
-plt.scatter([G.nodes[end_node]['x']], [G.nodes[end_node]['y']], c='blue', s=100, zorder=5)
+#plot map
+fig, ax = ox.plot_graph(roadGraph, node_size=10, edge_linewidth=0.5, show=False, close=False)
+plt.scatter([roadGraph.nodes[startNode]['x']], [roadGraph.nodes[startNode]['y']], c='green', s=100, zorder=5)
+plt.scatter([roadGraph.nodes[endNode]['x']], [roadGraph.nodes[endNode]['y']], c='blue', s=100, zorder=5)
 plt.title('Map of path area')
-
-
-
-# Save the plot as a high-resolution image
-fig.set_size_inches(14, 12)
-plt.savefig("road_network_oxford_brookes_gatwick.png", dpi=300, bbox_inches='tight')
-
-# Display the plot
+fig.set_size_inches(15, 15)
+plt.savefig("roadNetwork.png", dpi=300, bbox_inches='tight')
 plt.show()
 
-#BFS
 def bfs(graph, start, goal):
-    start_time = time.time()  # Start timing
+    startTime = time.time()
     queue = deque([(start, [start])])
     visited = set()
-    visited_nodes = 0  # To track visited nodes
+    visitedNodes = 0
 
     while queue:
-        current_node, path = queue.popleft()
+        currentNode, path = queue.popleft()
 
-        if current_node == goal:
-            # Calculate the total path length in meters by summing edge weights
-            path_length = sum(graph[path[i]][path[i + 1]][0]['length'] for i in range(len(path) - 1))
-            execution_time = time.time() - start_time  # Stop timing
-            return path, path_length, visited_nodes, execution_time
+        if currentNode == goal:
+            pathLength = sum(graph[path[i]][path[i + 1]][0]['length'] for i in range(len(path) - 1))
+            executionTime = time.time() - startTime
+            return path, pathLength, visitedNodes, executionTime
 
-        if current_node not in visited:
-            visited.add(current_node)
-            visited_nodes += 1  # Count the visited nodes
+        if currentNode not in visited:
+            visited.add(currentNode)
+            visitedNodes += 1
 
-            for neighbor in graph.neighbors(current_node):
+            for neighbor in graph.neighbors(currentNode):
                 if neighbor not in visited:
                     queue.append((neighbor, path + [neighbor]))
 
-    return None, None, visited_nodes, time.time() - start_time
+    return None, None, visitedNodes, executionTime
 
-    #DFS
 def dfs(graph, start, goal):
     stack = [(start, [start])]
     visited = set()
-    visited_nodes = 0  # To track visited nodes
-    start_time = time.time()  # Start timing
+    visitedNodes = 0
+    startTime = time.time()
 
     while stack:
-        current_node, path = stack.pop()
+        currentNode, path = stack.pop()
 
-        if current_node == goal:
-            # Calculate the total path length in meters by summing edge weights
-            path_length = sum(graph[path[i]][path[i + 1]][0]['length'] for i in range(len(path) - 1))
-            execution_time = time.time() - start_time  # Stop timing
-            return path, path_length, visited_nodes, execution_time
+        if currentNode == goal:
+            pathLength = sum(graph[path[i]][path[i + 1]][0]['length'] for i in range(len(path) - 1))
+            executionTime = time.time() - startTime
+            return path, pathLength, visitedNodes, executionTime
 
-        if current_node not in visited:
-            visited.add(current_node)
-            visited_nodes += 1  # Count the visited nodes
+        if currentNode not in visited:
+            visited.add(currentNode)
+            visitedNodes += 1
 
-            for neighbor in graph.neighbors(current_node):
+            for neighbor in graph.neighbors(currentNode):
                 if neighbor not in visited:
                     stack.append((neighbor, path + [neighbor]))
 
-    return None, None, visited_nodes, time.time() - start_time
+    return None, None, visitedNodes, executionTime
 
-# Dijkstra algorithm
 def dijkstra(graph, start, goal):
-  start_time = time.time()  # Start timing
-
-    ####
-  print(graph)
-  print(start)
-  print(goal)
-    ####
-
-  open_set = [(0, start, [start])]
-  heapq.heapify(open_set)
+  startTime = time.time()
+  openSet = [(0, start, [start])]
+  heapq.heapify(openSet)
   visited = set()
 
-  min_cost = {start: 0}
-  visited_nodes = 0  # To count the number of visited nodes
+  minCost = {start: 0}
+  visitedNodes = 0
+  while openSet:
+        cost, currentNode, path = heapq.heappop(openSet)
 
-  while open_set:
-        cost, current_node, path = heapq.heappop(open_set)
+        if currentNode == goal:
+            executionTime = time.time() - startTime
+            return path, cost, visitedNodes, executionTime
 
-        if current_node == goal:
-            execution_time = time.time() - start_time  # Stop timing
-            return path, cost, visited_nodes, execution_time
+        if currentNode not in visited:
+            visited.add(currentNode)
+            visitedNodes += 1
 
-        if current_node not in visited:
-            visited.add(current_node)
-            visited_nodes += 1  # Increment visited nodes count
+            for neighbor in graph.neighbors(currentNode):
+                edgeWeight = graph[currentNode][neighbor][0]['length']
+                newCost = cost + edgeWeight
 
-            for neighbor in graph.neighbors(current_node):
-                edge_weight = graph[current_node][neighbor][0]['length']
-                new_cost = cost + edge_weight
+                if neighbor not in minCost or newCost < minCost[neighbor]:
+                    minCost[neighbor] = newCost
+                    heapq.heappush(openSet, (newCost, neighbor, path + [neighbor]))
 
-                if neighbor not in min_cost or new_cost < min_cost[neighbor]:
-                    min_cost[neighbor] = new_cost
-                    heapq.heappush(open_set, (new_cost, neighbor, path + [neighbor]))
+  return None, None, visitedNodes, executionTime
 
-  return None, None, visited_nodes, time.time() - start_time
+def euclideanDistance(node, goal):
+    nodeCoords = (roadGraph.nodes[node]['y'], roadGraph.nodes[node]['x'])
+    goalCoords = (roadGraph.nodes[goal]['y'], roadGraph.nodes[goal]['x'])
 
-
-####
-def euclidean_distance(node, goal):
-    # Get the coordinates of the current node and goal node
-    node_coords = (G.nodes[node]['y'], G.nodes[node]['x'])  # (latitude, longitude)
-    goal_coords = (G.nodes[goal]['y'], G.nodes[goal]['x'])  # (latitude, longitude)
-
-    # Calculate the Euclidean distance between the two nodes
-    x1, y1 = node_coords
-    x2, y2 = goal_coords
+    x1, y1 = nodeCoords
+    x2, y2 = goalCoords
     return math.sqrt((x2 - x1)**2 + (y2 - y1)**2)
 
-def a_star(graph, start, goal):
-    start_time = time.time()  # Start timing
+def aStar(graph, start, goal):
+    startTime = time.time()
 
-    # Priority queue with (f(n), current_node, path)
-    open_set = [(0 + euclidean_distance(start, goal), 0, start, [start])]  # f(n) = g(n) + h(n)
-    heapq.heapify(open_set)
+    openSet = [(0 + euclideanDistance(start, goal), 0, start, [start])]
+    heapq.heapify(openSet)
     visited = set()
 
-    min_cost = {start: 0}
-    visited_nodes = 0  # To count the number of visited nodes
+    minCost = {start: 0}
+    visitedNodes = 0
 
-    while open_set:
-        # f(n), g(n), current_node, path
-        f_cost, cost, current_node, path = heapq.heappop(open_set)
+    while openSet:
+        fCost, cost, currentNode, path = heapq.heappop(openSet)
 
-        if current_node == goal:
-            execution_time = time.time() - start_time  # Stop timing
-            return path, cost, visited_nodes, execution_time
+        if currentNode == goal:
+            executionTime = time.time() - startTime
+            return path, cost, visitedNodes, executionTime
 
-        if current_node not in visited:
-            visited.add(current_node)
-            visited_nodes += 1  # Increment visited nodes count
+        if currentNode not in visited:
+            visited.add(currentNode)
+            visitedNodes += 1
 
-            for neighbor in graph.neighbors(current_node):
-                edge_weight = graph[current_node][neighbor][0]['length']
-                new_cost = cost + edge_weight
+            for neighbor in graph.neighbors(currentNode):
+                edgeWeight = graph[currentNode][neighbor][0]['length']
+                newCost = cost + edgeWeight
 
-                # Calculate f(n) = g(n) + h(n)
-                f_cost = new_cost + euclidean_distance(neighbor, goal)
+                fCost = newCost + euclideanDistance(neighbor, goal)
 
-                if neighbor not in min_cost or new_cost < min_cost[neighbor]:
-                    min_cost[neighbor] = new_cost
-                    heapq.heappush(open_set, (f_cost, new_cost, neighbor, path + [neighbor]))
+                if neighbor not in minCost or newCost < minCost[neighbor]:
+                    minCost[neighbor] = newCost
+                    heapq.heappush(openSet, (fCost, newCost, neighbor, path + [neighbor]))
 
-    return None, None, visited_nodes, time.time() - start_time
 
-####
-# Bidirectional Dijkstra Algorithm (Updated)
-def bidirectional_dijkstra(graph, start, goal):
-    start_time = time.time()  # Start timing
+    return None, None, visitedNodes, executionTime
 
-    # Forward direction: start -> goal
-    forward_queue = [(0, start, [start])]
-    heapq.heapify(forward_queue)
-    forward_visited = set()
-    forward_dist = {start: 0}
-    forward_prev = {start: None}
-    forward_visited_nodes = 0
+def bidirectionalDijkstra(graph, start, goal):
+    startTime = time.time()
 
-    # Backward direction: goal -> start
-    backward_queue = [(0, goal, [goal])]
-    heapq.heapify(backward_queue)
-    backward_visited = set()
-    backward_dist = {goal: 0}
-    backward_prev = {goal: None}
-    backward_visited_nodes = 0
+    fQueue = [(0, start, [start])]
+    heapq.heapify(fQueue)
+    fVisited = set()
+    fDist = {start: 0}
+    fPrev = {start: None}
+    fVisitedNodes = 0
 
-    # Initialize best distance and meeting node
-    shortest_path_length = float('inf')
-    meeting_node = None
-    visited_nodes = 0  # Total number of visited nodes
+    bQueue = [(0, goal, [goal])]
+    heapq.heapify(bQueue)
+    bVisited = set()
+    bDist = {goal: 0}
+    bPrev = {goal: None}
+    bVisitedNodes = 0
 
-    while forward_queue and backward_queue:
-        # Expand the forward search
-        if forward_queue:
-            f_cost, f_node, f_path = heapq.heappop(forward_queue)
+    shortestPathLength = float('inf')
+    meetingNode = None
+    visitedNodes = 0
 
-            if f_node in backward_visited:
-                total_dist = forward_dist[f_node] + backward_dist[f_node]
-                if total_dist < shortest_path_length:
-                    shortest_path_length = total_dist
-                    meeting_node = f_node
+    while fQueue and bQueue:
+        if fQueue:
+            fCost, fNode, fPath = heapq.heappop(fQueue)
 
-                    forward_path = f_path
-                    backward_path = []
-                    b_node = f_node
-                    while b_node is not None:
-                        backward_path.append(b_node)
-                        b_node = backward_prev.get(b_node)
-                    backward_path.reverse()
-                    path = forward_path + backward_path[1:]  # Avoid double-counting meeting node
+            if fNode in bVisited:
+                totalDist = fDist[fNode] + bDist[fNode]
+                if totalDist < shortestPathLength:
+                    shortestPathLength = totalDist
+                    meetingNode = fNode
+
+                    bPath = []
+                    bNode = fNode
+                    while bNode is not None:
+                        bPath.append(bNode)
+                        bNode = bPrev.get(bNode)
+                    bPath.reverse()
+                    path = fPath + bPath[1:]
                     break
 
-            if f_node not in forward_visited:
-                forward_visited.add(f_node)
-                forward_visited_nodes += 1
-                visited_nodes += 1  # Increment total visited nodes
+            if fNode not in fVisited:
+                fVisited.add(fNode)
+                fVisitedNodes += 1
+                visitedNodes += 1
 
-                for neighbor in graph.neighbors(f_node):
-                    edge_weight = graph[f_node][neighbor][0]['length']
-                    new_cost = f_cost + edge_weight
+                for neighbor in graph.neighbors(fNode):
+                    edgeWeight = graph[fNode][neighbor][0]['length']
+                    newCost = fCost + edgeWeight
 
-                    if neighbor not in forward_dist or new_cost < forward_dist[neighbor]:
-                        forward_dist[neighbor] = new_cost
-                        forward_prev[neighbor] = f_node  # Track the path in the forward search
-                        heapq.heappush(forward_queue, (new_cost, neighbor, f_path + [neighbor]))
+                    if neighbor not in fDist or newCost < fDist[neighbor]:
+                        fDist[neighbor] = newCost
+                        fPrev[neighbor] = fNode
+                        heapq.heappush(fQueue, (newCost, neighbor, fPath + [neighbor]))
 
-        # Expand the backward search
-        if backward_queue:
-            b_cost, b_node, b_path = heapq.heappop(backward_queue)
+        if bQueue:
+            bCost, bNode, bPath = heapq.heappop(bQueue)
 
-            if b_node in forward_visited:
-                total_dist = forward_dist[b_node] + backward_dist[b_node]
-                if total_dist < shortest_path_length:
-                    shortest_path_length = total_dist
-                    meeting_node = b_node
+            if bNode in fVisited:
+                totalDist = fDist[bNode] + bDist[bNode]
+                if totalDist < shortestPathLength:
+                    shortestPathLength = totalDist
+                    meeting_node = bNode
 
-                    forward_path = []
-                    f_node = b_node
-                    while f_node is not None:
-                        forward_path.append(f_node)
-                        f_node = forward_prev.get(f_node)
-                    forward_path.reverse()
-                    backward_path = b_path
-                    path = forward_path + backward_path[1:]  # Avoid double-counting meeting node
+                    fPath = []
+                    fNode = bNode
+                    while fNode is not None:
+                        fPath.append(fNode)
+                        fNode = fPrev.get(fNode)
+                    fPath.reverse()
+                    path = fPath + bPath[1:]
                     break
 
-            if b_node not in backward_visited:
-                backward_visited.add(b_node)
-                backward_visited_nodes += 1
-                visited_nodes += 1  # Increment total visited nodes
+            if bNode not in bVisited:
+                bVisited.add(bNode)
+                bVisitedNodes += 1
+                visitedNodes += 1
 
-                for neighbor in graph.neighbors(b_node):
-                    edge_weight = graph[b_node][neighbor][0]['length']
-                    new_cost = b_cost + edge_weight
+                for neighbor in graph.neighbors(bNode):
+                    edgeWeight = graph[bNode][neighbor][0]['length']
+                    newCost = bCost + edgeWeight
 
-                    if neighbor not in backward_dist or new_cost < backward_dist[neighbor]:
-                        backward_dist[neighbor] = new_cost
-                        backward_prev[neighbor] = b_node  # Track the path in the backward search
-                        heapq.heappush(backward_queue, (new_cost, neighbor, b_path + [neighbor]))
+                    if neighbor not in bDist or newCost < bDist[neighbor]:
+                        bDist[neighbor] = newCost
+                        bPrev[neighbor] = bNode
+                        heapq.heappush(bQueue, (newCost, neighbor, bPath + [neighbor]))
 
-    execution_time = time.time() - start_time  # Stop timing
-
-    #if meeting_node is None:
-    return None, None, visited_nodes, execution_time  # No path found
-
-    #return path, shortest_path_length, visited_nodes, execution_time  # Return path, cost, visited nodes, time
+    executionTime = time.time() - startTime
+    return None, shortestPathLength, visitedNodes, executionTime
 
 
-
-####
-#Compare funtions
-def compare_algorithms(graph, start_node, end_node):
+def compareAlgorithms(graph, startNode, endNode):
     results = {}
-    algorithms = {
-        'Dijkstra': dijkstra,
-        'Bidirectional Dijkstra': bidirectional_dijkstra,
-        'A*': a_star,
-        'BFS': bfs,
-        'DFS': dfs
-    }
+    algorithms = {'BFS': bfs,'Dijkstra': dijkstra,'Bidirectional Dijkstra': bidirectionalDijkstra,'A*': aStar,'DFS': dfs}
 
     for algo_name, algo_func in algorithms.items():
-        # Call each algorithm and get the visited nodes, path length, and execution time
-        path, cost, visited_nodes, exec_time = algo_func(graph, start_node, end_node)
-
-        # Store results in the dictionary
-        results[algo_name] = {
-            'Visited Nodes': visited_nodes,
-            'Path Length (meters)': cost,
-            'Execution Time (seconds)': exec_time
-        }
-
+        path, cost, visited_nodes, exec_time = algo_func(graph, startNode, endNode)
+        results[algo_name] = {'Visited Nodes': visited_nodes,'Path Length (meters)': cost,'Execution Time (seconds)': exec_time}
     return results
 
-# Test the algorithms and display the results in a DataFrame
-results = compare_algorithms(G, start_node, end_node)
-df_results = pd.DataFrame(results).T
-print(df_results)
+results = compareAlgorithms(roadGraph, startNode, endNode)
+dfResults = pd.DataFrame(results).T
+print(dfResults)
 
-#barchart
-algorithms = df_results.index
-nodes_visited = df_results['Visited Nodes']
+#barcharts
+algorithms = dfResults.index
 
-plt.bar(algorithms, nodes_visited, color=['blue', 'green', 'red'])
-plt.title('Nodes Visited by Pathfinding Algorithms')
-plt.xlabel('Algorithm')
+nodesVisited = dfResults['Visited Nodes']
+plt.bar(algorithms, nodesVisited, color=['blue'])
+plt.title('Nodes Visited by pathfinding algorithms')
+plt.xlabel('Pathing methord')
 plt.ylabel('Number of Nodes Visited')
 plt.show()
 
-#line graph
-execution_times = df_results['Execution Time (seconds)']
-
-plt.plot(algorithms, execution_times, marker='o', linestyle='-', color='purple')
-plt.title('Execution Time of Pathfinding Algorithms')
-plt.xlabel('Algorithm')
-plt.ylabel('Execution Time (seconds)')
+executionTimes = dfResults["Execution Time (seconds)"]
+plt.bar(algorithms, executionTimes, color=['blue'])
+plt.title('Time for the pathfinding algorithms to find path')
+plt.xlabel('Pathing methord')
+plt.ylabel("Execution time")
 plt.show()
 
-#barchart distance
-path_lengths = df_results['Path Length (meters)']
-
-plt.bar(algorithms, path_lengths, color=['orange', 'blue', 'green'])
-plt.title('Path Lengths Found by Pathfinding Algorithms')
-plt.xlabel('Algorithm')
-plt.ylabel('Path Length (meters)')
+pathLengths = dfResults['Path Length (meters)']
+plt.bar(algorithms, pathLengths, color=['blue'])
+plt.title('Lengths of paths found by pathfinding algorithms')
+plt.xlabel('Pathing methord')
+plt.ylabel("Path Length")
 plt.show()

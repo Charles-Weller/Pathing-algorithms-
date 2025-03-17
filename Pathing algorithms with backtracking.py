@@ -7,9 +7,15 @@ import pandas as pd
 from collections import deque
 import math
 
+startPoint = (51.888883, -1.140333)
+middlePoint = (51.783124, -1.205518)
+endPoint = (51.677365, -1.270703)
+##Use when backtracking is not being used also need to increase distance to 150000
+
 startPoint = (51.754816, -1.222991)
 middlePoint = (51.735, -1.205)
 endPoint = (51.72627, -1.19996)
+##Use then backtracking is being used also distance needs to be 3000
 
 roadGraph = ox.graph_from_point(middlePoint, dist=3000, network_type="drive")
 startNode = ox.distance.nearest_nodes(roadGraph, X=startPoint[1], Y=startPoint[0])
@@ -482,16 +488,24 @@ def bidirectionalDijkstraBT(graph, start, goal):
 
 def compareAlgorithms(graph, startNode, endNode):
     results = {}
-    algorithms = {"BD": bidirectionalDijkstra, "BD BT": bidirectionalDijkstraBT, "A*": aStar,"A* BT": aStarBT,"DFS": dfs, "DFS BT": dfsBT,}
-    
+    algorithms = {"BD": bidirectionalDijkstra, "BD BT": bidirectionalDijkstraBT, "A*": aStar,"A* BT": aStarBT,"DFS": dfs, "DFS BT": dfsBT, "BFS": bfs, "BFS BT": bfsBT,"D": dijkstra, "D BT": dijkstraBT}
+
     for algo_name, algo_func in algorithms.items():
         path, cost, visited_nodes, exec_time = algo_func(graph, startNode, endNode)
         results[algo_name] = {"Visited Nodes": visited_nodes,"Path Length (meters)": cost,"Execution Time (seconds)": exec_time}
     return results
 
+print("All the BT will have varying results due to the limitation on roads that they can take")
+print("")
+
 results = compareAlgorithms(roadGraph, startNode, endNode)
 dfResults = pd.DataFrame(results).T
 print(dfResults)
+
+print("")
+print("BD stands for biodiregical dijkstra")
+print("D syands for  dijkstra")
+print("BT represents when backtracking is being used")
 
 algorithms = dfResults.index
 nodesVisited = dfResults["Visited Nodes"]
@@ -500,6 +514,7 @@ plt.title("Nodes Visited by pathfinding algorithms")
 plt.xlabel("Pathing methord")
 plt.ylabel("Number of Nodes Visited")
 plt.show()
+
 
 executionTimes = dfResults["Execution Time (seconds)"]
 plt.bar(algorithms, executionTimes, color=["blue"])

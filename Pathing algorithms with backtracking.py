@@ -7,15 +7,9 @@ import pandas as pd
 from collections import deque
 import math
 
-startPoint = (51.888883, -1.140333)
-middlePoint = (51.783124, -1.205518)
-endPoint = (51.677365, -1.270703)
-##Use when backtracking is not being used also need to increase distance to 150000
-
 startPoint = (51.754816, -1.222991)
 middlePoint = (51.735, -1.205)
 endPoint = (51.72627, -1.19996)
-##Use then backtracking is being used also distance needs to be 3000
 
 roadGraph = ox.graph_from_point(middlePoint, dist=3000, network_type="drive")
 startNode = ox.distance.nearest_nodes(roadGraph, X=startPoint[1], Y=startPoint[0])
@@ -38,7 +32,7 @@ restrictedRoads = ["Sandford Road", "Garsington Road"]
 roadSafetyStatus = {"Sandford Road": "unsafe","Garsington Road": "unsafe"}
 
 def isRoadOpen(roadName):
-    if isinstance(roadName, list):  
+    if isinstance(roadName, list):
         return all(roadSafetyStatus.get(name, "safe") == "safe" for name in roadName)
     return roadSafetyStatus.get(roadName, "safe") == "safe"
 
@@ -48,7 +42,7 @@ def isRoadSafe(roadName):
     return roadSafetyStatus.get(roadName, "safe") == "safe"
 
 def backtrackingPathfinding(graph, startNode, endNode, visited=None, path=None):
-  
+
     if visited is None:
         visited = set()
     if path is None:
@@ -488,8 +482,8 @@ def bidirectionalDijkstraBT(graph, start, goal):
 
 def compareAlgorithms(graph, startNode, endNode):
     results = {}
-    algorithms = {"BD": bidirectionalDijkstra, "BD BT": bidirectionalDijkstraBT, "A*": aStar,"A* BT": aStarBT,"DFS": dfs, "DFS BT": dfsBT, "BFS": bfs, "BFS BT": bfsBT,"Dijkstra": dijkstra, "": "dijkstra BT"}
-
+    algorithms = {"BD": bidirectionalDijkstra, "BD BT": bidirectionalDijkstraBT, "A*": aStar,"A* BT": aStarBT,"DFS": dfs, "DFS BT": dfsBT,}
+    
     for algo_name, algo_func in algorithms.items():
         path, cost, visited_nodes, exec_time = algo_func(graph, startNode, endNode)
         results[algo_name] = {"Visited Nodes": visited_nodes,"Path Length (meters)": cost,"Execution Time (seconds)": exec_time}

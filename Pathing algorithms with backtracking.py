@@ -10,7 +10,7 @@ import math
 startPoint = (51.754816, -1.222991)
 middlePoint = (51.735, -1.205)
 endPoint = (51.72627, -1.19996)
-##Use then backtracking is being used also distance needs to be 3000
+
 
 roadGraph = ox.graph_from_point(middlePoint, dist=3000, network_type="drive")
 startNode = ox.distance.nearest_nodes(roadGraph, X=startPoint[1], Y=startPoint[0])

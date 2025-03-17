@@ -7,11 +7,6 @@ import pandas as pd
 from collections import deque
 import math
 
-startPoint = (51.888883, -1.140333)
-middlePoint = (51.783124, -1.205518)
-endPoint = (51.677365, -1.270703)
-##Use when backtracking is not being used also need to increase distance to 150000
-
 startPoint = (51.754816, -1.222991)
 middlePoint = (51.735, -1.205)
 endPoint = (51.72627, -1.19996)

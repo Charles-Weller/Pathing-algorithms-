@@ -1,4 +1,3 @@
-### peroanl upgarde:
 import osmnx as ox
 import networkx as nx
 import matplotlib.pyplot as plt

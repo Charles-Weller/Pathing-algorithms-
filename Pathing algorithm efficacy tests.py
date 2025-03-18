@@ -1,3 +1,4 @@
+### peroanl upgarde:
 import osmnx as ox
 import networkx as nx
 import matplotlib.pyplot as plt
@@ -7,21 +8,39 @@ import pandas as pd
 from collections import deque
 import math
 
-startPoint = (51.770072, -1.259315)
-endPoint = (51.742027, -1.228216)
+startPoint = (51.888883, -1.140333)
+middlePoint = (51.783124, -1.205518)
+endPoint = (51.677365, -1.270703)
 
-roadGraph = ox.graph_from_point(startPoint, dist=5000, network_type='drive')
+roadGraph = ox.graph_from_point(middlePoint, dist=15000, network_type="drive")
 startNode = ox.distance.nearest_nodes(roadGraph, X=startPoint[1], Y=startPoint[0])
 endNode = ox.distance.nearest_nodes(roadGraph, X=endPoint[1], Y=endPoint[0])
 
-#plot map
 fig, ax = ox.plot_graph(roadGraph, node_size=10, edge_linewidth=0.5, show=False, close=False)
-plt.scatter([roadGraph.nodes[startNode]['x']], [roadGraph.nodes[startNode]['y']], c='green', s=100, zorder=5)
-plt.scatter([roadGraph.nodes[endNode]['x']], [roadGraph.nodes[endNode]['y']], c='blue', s=100, zorder=5)
-plt.title('Map of path area')
+plt.scatter([roadGraph.nodes[startNode]["x"]], [roadGraph.nodes[startNode]["y"]], c="green", s=100, zorder=5)
+plt.scatter([roadGraph.nodes[endNode]["x"]], [roadGraph.nodes[endNode]["y"]], c="blue", s=100, zorder=5)
+plt.title("Road network graph represonataion")
 fig.set_size_inches(15, 15)
-plt.savefig("roadNetwork.png", dpi=300, bbox_inches='tight')
+plt.savefig("roadNetwork.png", dpi=300, bbox_inches="tight")
 plt.show()
+
+numNodes = len(roadGraph.nodes)
+numEdges = len(roadGraph.edges)
+print("There are ", numNodes, "nodes in this graph.")
+print("There are ", numEdges, "edges in this graph.\n")
+
+restrictedRoads = ["Sandford Road", "Garsington Road"]
+roadSafetyStatus = {"Sandford Road": "unsafe","Garsington Road": "unsafe"}
+
+def isRoadOpen(roadName):
+    if isinstance(roadName, list):
+        return all(roadSafetyStatus.get(name, "safe") == "safe" for name in roadName)
+    return roadSafetyStatus.get(roadName, "safe") == "safe"
+
+def isRoadSafe(roadName):
+    if isinstance(roadName, list):
+        return all(roadSafetyStatus.get(name, "safe") == "safe" for name in roadName)
+    return roadSafetyStatus.get(roadName, "safe") == "safe"
 
 def bfs(graph, start, goal):
     startTime = time.time()
@@ -33,7 +52,7 @@ def bfs(graph, start, goal):
         currentNode, path = queue.popleft()
 
         if currentNode == goal:
-            pathLength = sum(graph[path[i]][path[i + 1]][0]['length'] for i in range(len(path) - 1))
+            pathLength = sum(graph[path[i]][path[i + 1]][0]["length"] for i in range(len(path) - 1))
             executionTime = time.time() - startTime
             return path, pathLength, visitedNodes, executionTime
 
@@ -57,7 +76,7 @@ def dfs(graph, start, goal):
         currentNode, path = stack.pop()
 
         if currentNode == goal:
-            pathLength = sum(graph[path[i]][path[i + 1]][0]['length'] for i in range(len(path) - 1))
+            pathLength = sum(graph[path[i]][path[i + 1]][0]["length"] for i in range(len(path) - 1))
             executionTime = time.time() - startTime
             return path, pathLength, visitedNodes, executionTime
 
@@ -76,9 +95,9 @@ def dijkstra(graph, start, goal):
   openSet = [(0, start, [start])]
   heapq.heapify(openSet)
   visited = set()
-
   minCost = {start: 0}
   visitedNodes = 0
+
   while openSet:
         cost, currentNode, path = heapq.heappop(openSet)
 
@@ -91,7 +110,7 @@ def dijkstra(graph, start, goal):
             visitedNodes += 1
 
             for neighbor in graph.neighbors(currentNode):
-                edgeWeight = graph[currentNode][neighbor][0]['length']
+                edgeWeight = graph[currentNode][neighbor][0]["length"]
                 newCost = cost + edgeWeight
 
                 if neighbor not in minCost or newCost < minCost[neighbor]:
@@ -101,8 +120,8 @@ def dijkstra(graph, start, goal):
   return None, None, visitedNodes, executionTime
 
 def euclideanDistance(node, goal):
-    nodeCoords = (roadGraph.nodes[node]['y'], roadGraph.nodes[node]['x'])
-    goalCoords = (roadGraph.nodes[goal]['y'], roadGraph.nodes[goal]['x'])
+    nodeCoords = (roadGraph.nodes[node]["y"], roadGraph.nodes[node]["x"])
+    goalCoords = (roadGraph.nodes[goal]["y"], roadGraph.nodes[goal]["x"])
 
     x1, y1 = nodeCoords
     x2, y2 = goalCoords
@@ -110,11 +129,9 @@ def euclideanDistance(node, goal):
 
 def aStar(graph, start, goal):
     startTime = time.time()
-
     openSet = [(0 + euclideanDistance(start, goal), 0, start, [start])]
     heapq.heapify(openSet)
     visited = set()
-
     minCost = {start: 0}
     visitedNodes = 0
 
@@ -130,7 +147,7 @@ def aStar(graph, start, goal):
             visitedNodes += 1
 
             for neighbor in graph.neighbors(currentNode):
-                edgeWeight = graph[currentNode][neighbor][0]['length']
+                edgeWeight = graph[currentNode][neighbor][0]["length"]
                 newCost = cost + edgeWeight
 
                 fCost = newCost + euclideanDistance(neighbor, goal)
@@ -159,7 +176,7 @@ def bidirectionalDijkstra(graph, start, goal):
     bPrev = {goal: None}
     bVisitedNodes = 0
 
-    shortestPathLength = float('inf')
+    shortestPathLength = float("inf")
     meetingNode = None
     visitedNodes = 0
 
@@ -188,7 +205,7 @@ def bidirectionalDijkstra(graph, start, goal):
                 visitedNodes += 1
 
                 for neighbor in graph.neighbors(fNode):
-                    edgeWeight = graph[fNode][neighbor][0]['length']
+                    edgeWeight = graph[fNode][neighbor][0]["length"]
                     newCost = fCost + edgeWeight
 
                     if neighbor not in fDist or newCost < fDist[neighbor]:
@@ -220,7 +237,7 @@ def bidirectionalDijkstra(graph, start, goal):
                 visitedNodes += 1
 
                 for neighbor in graph.neighbors(bNode):
-                    edgeWeight = graph[bNode][neighbor][0]['length']
+                    edgeWeight = graph[bNode][neighbor][0]["length"]
                     newCost = bCost + edgeWeight
 
                     if neighbor not in bDist or newCost < bDist[neighbor]:
@@ -231,40 +248,42 @@ def bidirectionalDijkstra(graph, start, goal):
     executionTime = time.time() - startTime
     return None, shortestPathLength, visitedNodes, executionTime
 
-
 def compareAlgorithms(graph, startNode, endNode):
     results = {}
-    algorithms = {'BFS': bfs,'Dijkstra': dijkstra,'Bidirectional Dijkstra': bidirectionalDijkstra,'A*': aStar,'DFS': dfs}
+    algorithms = {"BD": bidirectionalDijkstra, "A*": aStar,"DFS": dfs, "BFS": bfs, "D": dijkstra}
 
     for algo_name, algo_func in algorithms.items():
         path, cost, visited_nodes, exec_time = algo_func(graph, startNode, endNode)
-        results[algo_name] = {'Visited Nodes': visited_nodes,'Path Length (meters)': cost,'Execution Time (seconds)': exec_time}
+        results[algo_name] = {"Visited Nodes": visited_nodes,"Path Length (meters)": cost,"Execution Time (seconds)": exec_time}
     return results
 
 results = compareAlgorithms(roadGraph, startNode, endNode)
 dfResults = pd.DataFrame(results).T
 print(dfResults)
 
-#barcharts
-algorithms = dfResults.index
+print("")
+print("BD stands for biodiregical dijkstra")
+print("D syands for  dijkstra")
 
-nodesVisited = dfResults['Visited Nodes']
-plt.bar(algorithms, nodesVisited, color=['blue'])
-plt.title('Nodes Visited by pathfinding algorithms')
-plt.xlabel('Pathing methord')
-plt.ylabel('Number of Nodes Visited')
+algorithms = dfResults.index
+nodesVisited = dfResults["Visited Nodes"]
+plt.bar(algorithms, nodesVisited, color=["blue"])
+plt.title("Nodes Visited by pathfinding algorithms")
+plt.xlabel("Pathing methord")
+plt.ylabel("Number of Nodes Visited")
 plt.show()
 
+
 executionTimes = dfResults["Execution Time (seconds)"]
-plt.bar(algorithms, executionTimes, color=['blue'])
-plt.title('Time for the pathfinding algorithms to find path')
-plt.xlabel('Pathing methord')
+plt.bar(algorithms, executionTimes, color=["blue"])
+plt.title("Time for the pathfinding algorithms to find path")
+plt.xlabel("Pathing methord")
 plt.ylabel("Execution time")
 plt.show()
 
-pathLengths = dfResults['Path Length (meters)']
-plt.bar(algorithms, pathLengths, color=['blue'])
-plt.title('Lengths of paths found by pathfinding algorithms')
-plt.xlabel('Pathing methord')
+pathLengths = dfResults["Path Length (meters)"]
+plt.bar(algorithms, pathLengths, color=["blue"])
+plt.title("Lengths of paths found by pathfinding algorithms")
+plt.xlabel("Pathing methord")
 plt.ylabel("Path Length")
-plt.show()
+plt.show()  
